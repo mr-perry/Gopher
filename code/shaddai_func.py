@@ -143,35 +143,38 @@ def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=Fa
   #
   html = 'http://pds-geosciences.wustl.edu' 
   row = df.loc[df['Obs'] == _file] 
-  for item in row:
-    if item == 'Obs':
-      continue
-    elif item in dlList:
-      url = html + row[item].values[0]
-      u = urlopen(url)
-      if u.status == 200:
-        file_name = row[item].values[0].split('/')[-1]
-        if item[:3] == 'RGR':
-          outFile = rgramOutDir + '/' + file_name
-        elif item[:3] == 'GEO':
-          outFile = geomOutDir + '/' + file_name
-        f = open(outFile, 'wb')
-        file_size = int(u.getheader("Content-Length"))
-        print("Downloading: {} Bytes: {}".format(file_name, str(file_size)))
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-          buffer = u.read(block_sz)
-          if not buffer:
-            break
-          file_size_dl += len(buffer)
-          f.write(buffer)
-          status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100 / file_size)
-          status = status + chr(8)*(len(status)+1)
-          print(status, end="\r")
-        f.close()
-      else:
-        print('File {} not found on the PDS website at {}'.format(file_name, url))
+  if row.empty:
+    print('Observation {} not available on the PDS'.format(_file))
+  else:
+    for item in row:
+      if item == 'Obs':
+        continue
+      elif item in dlList:
+        url = html + row[item].values[0]
+        u = urlopen(url)
+        if u.status == 200:
+          file_name = row[item].values[0].split('/')[-1]
+          if item[:3] == 'RGR':
+            outFile = rgramOutDir + '/' + file_name
+          elif item[:3] == 'GEO':
+            outFile = geomOutDir + '/' + file_name
+          f = open(outFile, 'wb')
+          file_size = int(u.getheader("Content-Length"))
+          print("Downloading: {} Bytes: {}".format(file_name, str(file_size)))
+          file_size_dl = 0
+          block_sz = 8192
+          while True:
+            buffer = u.read(block_sz)
+            if not buffer:
+              break
+            file_size_dl += len(buffer)
+            f.write(buffer)
+            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100 / file_size)
+            status = status + chr(8)*(len(status)+1)
+            print(status, end="\r")
+          f.close()
+        else:
+          print('File {} not found on the PDS website at {}'.format(file_name, url))
   return
 
 def toPDSName(obsList):
