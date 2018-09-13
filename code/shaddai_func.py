@@ -108,6 +108,8 @@ def makeDataFrame(URLs):
   return PDSFileList
 
 def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=False):
+  if not isdir('../output'):
+    mkdir('../output')
   todayDate = datetime.today().strftime('%Y%m%d')
   outDir = '../output/' + todayDate
   rgramOutDir = outDir + '/rgram'

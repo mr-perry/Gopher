@@ -1,4 +1,6 @@
-output/*
+.img
+.lbl
+.tab
 *.pyc
 */*.pyc
 
