@@ -11,17 +11,33 @@ from urllib.request import urlopen
 def parseArgs():
   prog = 'SHADDAI'
   vers = '0.1'
+  products = ['all', 'rgram', 'geom', 'tiff']
+  prods = ['all']
   parser = argparse.ArgumentParser(description=str(prog + ' ' + str(vers)))
   parser.add_argument('inputFile', type=str, nargs=1,
                       help=str("Input file containing list of desired observations"))  
   parser.add_argument('-u', '--update', action="store_true", default=False,
                       help=str("Update the PDS Data file"))
+  parser.add_argument('-p', '--products', type=str, nargs=1, default=prods,
+                      help=str("Select products to download ['all', 'rgram', 'geom', 'tiff']"))
+  parser.add_argument('-l', '--labels', action="store_true", default=False,
+                      help=str("Download label files"))
+  parser.add_argument('-v', '--verbose', action="store_true", default=False,
+                      help=str("Verbose Output (do not use in screen session or if using a log file"))
   if len(sys.argv[1:]) == 0:
     parser.print_help()
     parser.exit()
   args = parser.parse_args()
   iFile = str(args.inputFile[0])
   update = args.update
+  if args.products[0].lower() in products:
+    prods = args.products[0].lower()
+  else:
+    print('ERROR: Product type not understood. Exiting.')
+    parser.print_help()
+    parser.exit()
+  labels = args.labels
+  verbose = args.verbose
   #
   # Check to make sure file exists
   #
@@ -38,7 +54,7 @@ def parseArgs():
       #
       if observations[0][0] != 0:
         observations = toPDSName(observations)
-      return observations, update
+      return observations, update, prods, labels, verbose
   else:
     print("""The file {} was not found. Please check your file path
              and try again.""".format(iFile))
@@ -73,11 +89,13 @@ def getFileList(html):
   URLs = []
   for _subDir in MainParser.lsData:
     if _subDir[-9:-7] == 's_':
-      try:
-        html_page = urlopen(html + _subDir[-9:])
-      except:
-        print(html + _subDir[-9:])
-        quit()
+      for _try in range(5):
+        try:
+          html_page = urlopen(html + _subDir[-9:])
+          break
+        except:
+          print('WARNING: Attempt {} of 6 Opening URL {}'.format(_try, html + _subDir[-9:]))
+          continue
       SubParser.feed(str(html_page.read()))
       URLs.append(SubParser.lsData)
   return URLs[-1]
@@ -91,11 +109,16 @@ def makeDataFrame(URLs):
           'RGRAM_URL': [],
           'RGRAM_LBL': [],
           'GEOM_URL': [],
-          'GEOM_LBL': []}
+          'GEOM_LBL': [],
+          'TIFF_URL': [],
+          'TIFF_LBL': []}
   for url in URLs:
     data['Obs'].append(url.split('/')[-1].split('_')[1])
     data['RGRAM_URL'].append(url)
     data['RGRAM_LBL'].append(url[:-3] + 'lbl')
+    #
+    # Make URL for GEOM File
+    #
     tmp = url.split('/')
     tmp[5] = 'geom'
     tmp2 = tmp[-1]
@@ -103,23 +126,41 @@ def makeDataFrame(URLs):
     geom = "/".join(tmp)
     data['GEOM_URL'].append(geom)
     data['GEOM_LBL'].append(geom[:-3] + 'lbl')
+    tmp = []
+    #
+    # Make URL for Browse Files
+    #
+    tmp = url.split('/')
+    tmp[4] = 'browse'
+    tmp[5] = 'tiff'
+    tmp2 = tmp[-1]
+    tmp[-1] = tmp2.split('_')[0] + '_' + tmp2.split('_')[1] + '_' + 'tiff.tif'
+    tiff = "/".join(tmp)
+    data['TIFF_URL'].append(tiff)
+    data['TIFF_LBL'].append(tiff[:-3]+'lbl')
   PDSFileList = pd.DataFrame(data)
   PDSFileList.to_pickle('../input/PDSFileList.pkl')
   return PDSFileList
 
-def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=False):
+def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=False, tiffs=True, tiffLBL=False, verbose=False):
   if not isdir('../output'):
     mkdir('../output')
   todayDate = datetime.today().strftime('%Y%m%d')
   outDir = '../output/' + todayDate
   rgramOutDir = outDir + '/rgram'
   geomOutDir = outDir + '/geom'
+  tiffOutDir = outDir + '/tiff' 
   if not isdir(outDir):
     mkdir(outDir)
   #
   # Select those file we wish to download
   #
-  tmp = ['RGRAM_URL', 'RGRAM_LBL', 'GEOM_URL', 'GEOM_LBL']
+  tmp = ['RGRAM_URL',
+         'RGRAM_LBL',
+         'GEOM_URL',
+         'GEOM_LBL',
+         'TIFF_URL',
+         'TIFF_LBL']
   idx = []
   if rgrams:
     idx.append(int(0))
@@ -137,6 +178,14 @@ def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=Fa
     idx.append(int(3))
     if not isdir(geomOutDir):
       mkdir(geomOutDir)
+  if tiffs:
+    idx.append(int(4))
+    if not isdir(tiffOutDir):
+      mkdir(tiffOutDir)
+  if tiffLBL:
+    idx.append(int(5))
+    if not isdir(tiffOutDir):
+      mkdir(tiffOutDir)
   dlList = [tmp[_i] for _i in idx]
   #
   # Begin download protocol
@@ -158,6 +207,8 @@ def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=Fa
             outFile = rgramOutDir + '/' + file_name
           elif item[:3] == 'GEO':
             outFile = geomOutDir + '/' + file_name
+          elif item[:3] == 'TIF':
+            outFile = tiffOutDir + '/' + file_name
           f = open(outFile, 'wb')
           file_size = int(u.getheader("Content-Length"))
           print("Downloading: {} Bytes: {}".format(file_name, str(file_size)))
@@ -169,9 +220,10 @@ def downloadFiles(_file, df, rgrams=True, rgramLBL=False, geoms=True, geomLBL=Fa
               break
             file_size_dl += len(buffer)
             f.write(buffer)
-            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100 / file_size)
-            status = status + chr(8)*(len(status)+1)
-            print(status, end="\r")
+            if verbose == True:
+              status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100 / file_size)
+              status = status + chr(8)*(len(status)+1)
+              print(status, end="\r")
           f.close()
         else:
           print('File {} not found on the PDS website at {}'.format(file_name, url))

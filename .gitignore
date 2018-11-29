@@ -3,4 +3,6 @@
 .tab
 *.pyc
 */*.pyc
+./output
+./output/*
 
