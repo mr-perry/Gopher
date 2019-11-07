@@ -11,7 +11,7 @@ from urllib.request import urlopen
 def parseArgs():
   prog = 'SHADDAI'
   vers = '0.1'
-  products = ['all', 'rgram', 'geom', 'tiff']
+  products = ['all', 'rgram', 'geom', 'tiff', 'edr']
   prods = ['all']
   parser = argparse.ArgumentParser(description=str(prog + ' ' + str(vers)))
   parser.add_argument('inputFile', type=str, nargs=1,
