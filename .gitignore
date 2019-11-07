@@ -1,8 +1,12 @@
 .img
 .lbl
 .tab
+*.log
+*.txt
+*.csv
 *.pyc
 */*.pyc
-./output
+output
 ./output/*
-
+input
+./input/*

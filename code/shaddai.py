@@ -22,9 +22,12 @@ def main():
   requestObs, update, products, labels, verbose = parseArgs()
   if testConnection():
     if update:
-      html = 'http://pds-geosciences.wustl.edu/mro/mro-m-sharad-5-radargram-v1/mrosh_2001/data/rgram/'
-      rgramURLs = getFileList(html) 
-      PDSFileDF = makeDataFrame(rgramURLs)
+      if products.upper() != 'EDR':  
+        html = 'http://pds-geosciences.wustl.edu/mro/mro-m-sharad-5-radargram-v1/mrosh_2001/data/rgram/'
+        rgramURLs = getFileList(html) 
+        PDSFileDF = makeDataFrame(rgramURLs)
+      else:
+        html = 'http://pds-geosciences.wustl.edu/mro/mro-m-sharad-3-edr-v1/'
     else:
       PDSFileDF = pd.read_pickle('../input/PDSFileList.pkl')
       rgrams = geoms = tiffs = False
