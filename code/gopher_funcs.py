@@ -4,10 +4,10 @@ import pandas as pd
 from urllib.error import URLError
 from urllib.request import urlopen, urlretrieve
 
-def parseArgs():
+def parseArgs(platform, pc):
   prog = 'Gopher: Planetary Orbital Radar Data Download Application'
   vers = '0.1'
-  outDir = '~/Downloads/'
+  outDir = '~' + pc + 'Downloads' + pc
   instruments = ['sharad']
   products = {'sharad': ['edr', 'rdr', 'usrdr'],}
   parser = argparse.ArgumentParser(description=str(prog + ' ' + str(vers)))
