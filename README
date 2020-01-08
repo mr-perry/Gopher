@@ -3,16 +3,11 @@ Required Packages:
   Pandas
 
 Installation Instruction:
-  I recommend installing miniconda or anaconda and running SHADDAI
+  I recommend installing miniconda or anaconda and running Gopher
   within a virtual environment
 
   conda create -n shaddai python=3.6.5 pandas
 
-  Once the environment has been installed, run SHADDAI by running
-  run_shaddai $1 $2
-  $1 is required and is the path to the input file
-  $2 is required if the PDSFileList.pkl file is missing or needs to be
-     updated due to a new release from the PDS.
-     Updated the .pkl file will increase run time
+  Once the environment has been installed, run Gopher by running
 
   For now all downloads are saved under output/TODAYSDATA/[rgram/geom]
