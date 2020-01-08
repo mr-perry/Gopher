@@ -4,6 +4,4 @@
 #
 source activate shaddai
 python gopher.py ../input/SHADDAIinput.txt -o ../output/test2 -i sharad -p edr
-#python gopher.py ../input/SHADDAIinput.txt -p rdr
-#python gopher.py ../input/SHADDAIinput.txt -p usrdr
-source deactivate shaddai
+conda deactivate
